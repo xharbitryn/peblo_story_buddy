@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 /// The single source of truth for the app's look.
-/// MaterialApp(theme: AppTheme.light()) makes every widget inherit these styles.
+
 class AppTheme {
   AppTheme._();
 
@@ -23,14 +23,14 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: 'Poppins', // makes ALL default text render in Poppins
+      fontFamily: 'Poppins', // makes default text render in Poppins
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
           minimumSize: const Size.fromHeight(
             60,
-          ), // big, kid-friendly tap target
+          ), // big, kid friendly tap target
           textStyle: const TextStyle(
             fontFamily: 'Poppins',
             fontSize: 19,

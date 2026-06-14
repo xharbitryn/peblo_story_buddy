@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Typography scale. One family (Poppins). Larger sizes + roomy line-heights
+/// Typography scale : One family (Poppins), Larger sizes + roomy line heights
 /// because the audience is young readers (ages 6–10).
 class AppTextStyles {
   AppTextStyles._();

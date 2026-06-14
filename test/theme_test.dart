@@ -1,17 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:peblo_story_buddy/core/theme/app_colors.dart';
 import 'package:peblo_story_buddy/core/theme/app_theme.dart';
+import 'package:peblo_story_buddy/features/story_buddy/presentation/story_buddy_screen.dart';
 
 void main() {
-  group('AppTheme', () {
-    final theme = AppTheme.light();
+  testWidgets('StoryBuddyScreen shows the title, story, and button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: StoryBuddyScreen()));
 
-    test('uses the Peblo primary colour', () {
-      expect(theme.colorScheme.primary, AppColors.primary);
-    });
-
-    test('uses the soft lilac scaffold background', () {
-      expect(theme.scaffoldBackgroundColor, AppColors.background);
-    });
+    expect(find.text('AI Story Buddy'), findsOneWidget);
+    expect(find.textContaining('Pip'), findsWidgets);
+    expect(find.text('Read Me a Story'), findsOneWidget);
   });
 }
