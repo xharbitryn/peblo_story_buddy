@@ -10,14 +10,44 @@ import 'widgets/read_story_button.dart';
 import 'widgets/quiz_view.dart';
 import 'widgets/success_confetti.dart';
 
-/// The single screen of the app: Buddy, story card, Read Me a Story, and the
-/// quiz that reveals only once narration has finished. Confetti overlays the
-/// whole screen on a correct answer.
-class StoryBuddyScreen extends ConsumerWidget {
+/// The single screen of the app: Buddy, story card, "Read Me a Story", and
+/// the quiz that reveals only after narration finishes.
+///
+/// Uses [WidgetsBindingObserver] to stop narration cleanly when the user
+/// backgrounds the app. Audio never bleeds into the home screen or lock screen.
+class StoryBuddyScreen extends ConsumerStatefulWidget {
   const StoryBuddyScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StoryBuddyScreen> createState() => _StoryBuddyScreenState();
+}
+
+class _StoryBuddyScreenState extends ConsumerState<StoryBuddyScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Stop narration the moment the app is backgrounded or detached.
+  /// The narration controller resets to idle so the button is ready on return.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      ref.read(narrationControllerProvider.notifier).stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final narration = ref.watch(narrationControllerProvider);
 
     final String buttonLabel = switch (narration.status) {
@@ -67,6 +97,8 @@ class StoryBuddyScreen extends ConsumerWidget {
                           ),
                         ],
                         const SizedBox(height: 28),
+                        // Quiz reveals with a fade andd slight slide after
+                        // narration completes.
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 450),
                           switchInCurve: Curves.easeOutCubic,
@@ -93,8 +125,11 @@ class StoryBuddyScreen extends ConsumerWidget {
                 ),
               ],
             ),
+
             const Positioned.fill(
-              child: IgnorePointer(child: SuccessConfetti()),
+              child: RepaintBoundary(
+                child: IgnorePointer(child: SuccessConfetti()),
+              ),
             ),
           ],
         ),
