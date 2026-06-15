@@ -67,13 +67,13 @@ void main() {
     await tester.pumpWidget(_harness());
     await tester.pump();
 
-    // Hidden before reading.
     expect(find.byType(OptionTile), findsNothing);
 
     await tester.tap(find.text('Read Me a Story'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // run the fake narration, finished
+    await tester.pump(); // settle state
+    await tester.pump(const Duration(milliseconds: 600)); // reveal animation
 
-    // Revealed after the  narration completes.
     expect(find.byType(OptionTile), findsWidgets);
   });
 }

@@ -8,9 +8,11 @@ import 'widgets/buddy_character.dart';
 import 'widgets/story_card.dart';
 import 'widgets/read_story_button.dart';
 import 'widgets/quiz_view.dart';
+import 'widgets/success_confetti.dart';
 
 /// The single screen of the app: Buddy, story card, Read Me a Story, and the
-/// quiz that reveals only once narration has finished.
+/// quiz that reveals only once narration has finished. Confetti overlays the
+/// whole screen on a correct answer.
 class StoryBuddyScreen extends ConsumerWidget {
   const StoryBuddyScreen({super.key});
 
@@ -26,60 +28,73 @@ class StoryBuddyScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const _TopBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 8),
-                    const Center(child: BuddyCharacter()),
-                    const SizedBox(height: 28),
-                    const StoryCard(label: 'Story', body: StoryContent.snippet),
-                    const SizedBox(height: 24),
-                    ReadStoryButton(
-                      isLoading: narration.status == NarrationStatus.preparing,
-                      label: buttonLabel,
-                      onPressed: () => ref
-                          .read(narrationControllerProvider.notifier)
-                          .readStory(StoryContent.snippet),
+            Column(
+              children: [
+                const _TopBar(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        const Center(child: BuddyCharacter()),
+                        const SizedBox(height: 28),
+                        const StoryCard(
+                          label: 'Story',
+                          body: StoryContent.snippet,
+                        ),
+                        const SizedBox(height: 24),
+                        ReadStoryButton(
+                          isLoading:
+                              narration.status == NarrationStatus.preparing,
+                          label: buttonLabel,
+                          onPressed: () => ref
+                              .read(narrationControllerProvider.notifier)
+                              .readStory(StoryContent.snippet),
+                        ),
+                        if (narration.status == NarrationStatus.error) ...[
+                          const SizedBox(height: 16),
+                          _NarrationError(
+                            message:
+                                narration.errorMessage ??
+                                "Oops! Something went wrong. Let's try again.",
+                            onRetry: () => ref
+                                .read(narrationControllerProvider.notifier)
+                                .readStory(StoryContent.snippet),
+                          ),
+                        ],
+                        const SizedBox(height: 28),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 450),
+                          switchInCurve: Curves.easeOutCubic,
+                          transitionBuilder: (child, animation) {
+                            final slide = Tween<Offset>(
+                              begin: const Offset(0, 0.08),
+                              end: Offset.zero,
+                            ).animate(animation);
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: slide,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: narration.isFinished
+                              ? const QuizView(key: ValueKey('quiz'))
+                              : const SizedBox.shrink(key: ValueKey('empty')),
+                        ),
+                      ],
                     ),
-                    if (narration.status == NarrationStatus.error) ...[
-                      const SizedBox(height: 16),
-                      _NarrationError(
-                        message:
-                            narration.errorMessage ??
-                            "Oops! Something went wrong. Let's try again.",
-                        onRetry: () => ref
-                            .read(narrationControllerProvider.notifier)
-                            .readStory(StoryContent.snippet),
-                      ),
-                    ],
-                    const SizedBox(height: 28),
-
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 450),
-                      switchInCurve: Curves.easeOutCubic,
-                      transitionBuilder: (child, animation) {
-                        final slide = Tween<Offset>(
-                          begin: const Offset(0, 0.08),
-                          end: Offset.zero,
-                        ).animate(animation);
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(position: slide, child: child),
-                        );
-                      },
-                      child: narration.isFinished
-                          ? const QuizView(key: ValueKey('quiz'))
-                          : const SizedBox.shrink(key: ValueKey('empty')),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(child: SuccessConfetti()),
             ),
           ],
         ),
