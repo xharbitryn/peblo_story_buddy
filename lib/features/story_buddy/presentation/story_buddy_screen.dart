@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/story_content.dart';
 import 'widgets/buddy_character.dart';
 import 'widgets/story_card.dart';
 import 'widgets/read_story_button.dart';
+import 'widgets/quiz_view.dart';
 
-/// The single screen of the app: Buddy, story card and Read Me a Story
-class StoryBuddyScreen extends StatelessWidget {
+class StoryBuddyScreen extends ConsumerWidget {
   const StoryBuddyScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -29,6 +30,9 @@ class StoryBuddyScreen extends StatelessWidget {
                     const StoryCard(label: 'Story', body: StoryContent.snippet),
                     const SizedBox(height: 24),
                     ReadStoryButton(onPressed: () {}),
+                    const SizedBox(height: 28),
+
+                    const QuizView(),
                   ],
                 ),
               ),
