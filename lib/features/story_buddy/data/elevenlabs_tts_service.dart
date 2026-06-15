@@ -21,18 +21,17 @@ class CachingElevenLabsTtsService implements TtsService {
 
   void Function()? _onStart;
   void Function()? _onComplete;
-  void Function(String)? _onError;
 
   bool _stopped = false;
   bool _disposed = false;
 
-  /// Rachel : clear, warm, reliable narrator voice on ElevenLabs free tier.
+  /// Rachel — clear, warm, reliable narrator voice on ElevenLabs free tier.
   static const _voiceId = '21m00Tcm4TlvDq8ikWAM';
   static const _modelId = 'eleven_turbo_v2_5';
 
   @override
   Future<void> init() async {
-    // AudioPlayer initialises lazily.
+    // AudioPlayer initialises lazily
   }
 
   @override
@@ -43,8 +42,7 @@ class CachingElevenLabsTtsService implements TtsService {
   }) {
     _onStart = onStart;
     _onComplete = onComplete;
-    _onError = onError;
-
+    // Mirror all three callbacks to the fallback so it can fire them too.
     _fallback.setCallbacks(
       onStart: onStart,
       onComplete: onComplete,
@@ -58,7 +56,7 @@ class CachingElevenLabsTtsService implements TtsService {
     try {
       await _speakViaElevenLabs(text);
     } catch (_) {
-      // Network error, API error : fall back to native silently.
+      // Incase of Network error, API error fallback to native silently.
       if (_stopped || _disposed) return;
       await _fallback.init();
       await _fallback.speak(text);
@@ -66,7 +64,7 @@ class CachingElevenLabsTtsService implements TtsService {
   }
 
   Future<void> _speakViaElevenLabs(String text) async {
-    // Resolve cache file
+    // 1. Resolve cache file
     final file = await _resolveCache(text);
 
     if (!file.existsSync()) {
@@ -75,12 +73,11 @@ class CachingElevenLabsTtsService implements TtsService {
 
     if (_stopped || _disposed) return;
 
-    // Load the audio source
+    // Load the audio source.
     await _player.setFilePath(file.path);
 
     if (_stopped || _disposed) return;
 
-    // Gate that completes when playback finishes or is stopped.
     final gate = Completer<void>();
 
     final sub = _player.playerStateStream.listen((state) {
@@ -97,7 +94,7 @@ class CachingElevenLabsTtsService implements TtsService {
       if (!gate.isCompleted) gate.complete();
     });
 
-    // Wait for completion
+    //  Wait for completion (timeout for longer stories).
     await gate.future.timeout(
       const Duration(seconds: 60),
       onTimeout: () {
@@ -160,6 +157,5 @@ class CachingElevenLabsTtsService implements TtsService {
     await _fallback.dispose();
     _onStart = null;
     _onComplete = null;
-    _onError = null;
   }
 }
