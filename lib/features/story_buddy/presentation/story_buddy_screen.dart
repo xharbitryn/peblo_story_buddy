@@ -2,17 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../application/narration_controller.dart';
 import '../data/story_content.dart';
 import 'widgets/buddy_character.dart';
 import 'widgets/story_card.dart';
 import 'widgets/read_story_button.dart';
 import 'widgets/quiz_view.dart';
 
+/// The single screen of the app: Buddy, story card, Read Me a Story, and the
+/// quiz that reveals only once narration has finished.
 class StoryBuddyScreen extends ConsumerWidget {
   const StoryBuddyScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final narration = ref.watch(narrationControllerProvider);
+
+    final String buttonLabel = switch (narration.status) {
+      NarrationStatus.preparing => 'Waking up Buddy…',
+      NarrationStatus.speaking => 'Reading…',
+      _ => 'Read Me a Story',
+    };
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -29,16 +40,86 @@ class StoryBuddyScreen extends ConsumerWidget {
                     const SizedBox(height: 28),
                     const StoryCard(label: 'Story', body: StoryContent.snippet),
                     const SizedBox(height: 24),
-                    ReadStoryButton(onPressed: () {}),
+                    ReadStoryButton(
+                      isLoading: narration.status == NarrationStatus.preparing,
+                      label: buttonLabel,
+                      onPressed: () => ref
+                          .read(narrationControllerProvider.notifier)
+                          .readStory(StoryContent.snippet),
+                    ),
+                    if (narration.status == NarrationStatus.error) ...[
+                      const SizedBox(height: 16),
+                      _NarrationError(
+                        message:
+                            narration.errorMessage ??
+                            "Oops! Something went wrong. Let's try again.",
+                        onRetry: () => ref
+                            .read(narrationControllerProvider.notifier)
+                            .readStory(StoryContent.snippet),
+                      ),
+                    ],
                     const SizedBox(height: 28),
 
-                    const QuizView(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 450),
+                      switchInCurve: Curves.easeOutCubic,
+                      transitionBuilder: (child, animation) {
+                        final slide = Tween<Offset>(
+                          begin: const Offset(0, 0.08),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(position: slide, child: child),
+                        );
+                      },
+                      child: narration.isFinished
+                          ? const QuizView(key: ValueKey('quiz'))
+                          : const SizedBox.shrink(key: ValueKey('empty')),
+                    ),
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NarrationError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _NarrationError({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1EE),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.coral),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.storyBody,
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            label: Text(
+              'Try again',
+              style: AppTextStyles.button.copyWith(color: AppColors.primary),
+            ),
+          ),
+        ],
       ),
     );
   }
