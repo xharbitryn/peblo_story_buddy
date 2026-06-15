@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/elevenlabs_tts_service.dart';
 import '../data/flutter_tts_service.dart';
 import '../data/tts_service.dart';
 
@@ -18,9 +19,20 @@ class NarrationState {
   bool get isFinished => status == NarrationStatus.finished;
 }
 
-/// The TTS engine
+/// API key injected at run time and never committed to source.
+
+/// When the key is absent (default), the app uses the native TTS engine.
+/// When the key is present, it uses ElevenLabs with MP3 caching and
+/// automatic native fallback on any failure.
+const _elevenLabsKey = String.fromEnvironment(
+  'ELEVENLABS_API_KEY',
+  defaultValue: '',
+);
+
 final ttsServiceProvider = Provider<TtsService>((ref) {
-  final service = FlutterTtsService();
+  final TtsService service = _elevenLabsKey.isNotEmpty
+      ? CachingElevenLabsTtsService(apiKey: _elevenLabsKey)
+      : FlutterTtsService();
   ref.onDispose(service.dispose);
   return service;
 });
@@ -44,6 +56,8 @@ class NarrationController extends Notifier<NarrationState> {
     return const NarrationState();
   }
 
+  /// Tap handler for "Read Me a Story"
+  /// never overlap audio.
   Future<void> readStory(String text) async {
     if (state.isBusy) return;
     state = const NarrationState(status: NarrationStatus.preparing);
@@ -58,7 +72,7 @@ class NarrationController extends Notifier<NarrationState> {
     }
   }
 
-  /// Stop playback
+  /// Stop playback (used on retry)
   Future<void> stop() async {
     await _tts.stop();
     if (state.isBusy) {

@@ -39,6 +39,8 @@ dependencies:
   confetti: ^0.8.0
   lottie: ^3.3.3
   http: ^1.6.0
+  path_provider: ^2.1.0
+  just_audio: ^0.9.34
 
 dev_dependencies:
   flutter_test:
